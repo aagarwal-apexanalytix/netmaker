@@ -90,6 +90,8 @@ const (
 	DELETE_ALL = "deleteall"
 	// FETCH_ALL - fetch table contents const
 	FETCH_ALL = "fetchall"
+	// FETCH_ONE - fetch a single record by key
+	FETCH_ONE = "fetchone"
 	// CLOSE_DB - graceful close of db const
 	CLOSE_DB = "closedb"
 	// isconnected
@@ -203,16 +205,11 @@ func DeleteAllRecords(tableName string) error {
 	return nil
 }
 
-// FetchRecord - fetches a record
+// FetchRecord - fetches a record by key using a direct WHERE query
 func FetchRecord(tableName string, key string) (string, error) {
-	results, err := FetchRecords(tableName)
-	if err != nil {
-		return "", err
-	}
-	if results[key] == "" {
-		return "", errors.New(NO_RECORD)
-	}
-	return results[key], nil
+	dbMutex.RLock()
+	defer dbMutex.RUnlock()
+	return getCurrentDB()[FETCH_ONE].(func(string, string) (string, error))(tableName, key)
 }
 
 // FetchRecords - fetches all records in given table

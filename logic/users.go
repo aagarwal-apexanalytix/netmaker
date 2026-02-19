@@ -108,19 +108,8 @@ func DeletePendingUser(username string) error {
 }
 
 func IsPendingUser(username string) bool {
-	records, err := database.FetchRecords(database.PENDING_USERS_TABLE_NAME)
-	if err != nil {
-		return false
-
-	}
-	for _, record := range records {
-		u := models.ReturnUser{}
-		err := json.Unmarshal([]byte(record), &u)
-		if err == nil && u.UserName == username {
-			return true
-		}
-	}
-	return false
+	_, err := database.FetchRecord(database.PENDING_USERS_TABLE_NAME, username)
+	return err == nil
 }
 
 func ListPendingReturnUsers() ([]models.ReturnUser, error) {

@@ -20,6 +20,7 @@ var SQLITE_FUNCTIONS = map[string]interface{}{
 	DELETE:       sqliteDeleteRecord,
 	DELETE_ALL:   sqliteDeleteAllRecords,
 	FETCH_ALL:    sqliteFetchRecords,
+	FETCH_ONE:    sqliteFetchRecord,
 	CLOSE_DB:     sqliteCloseDB,
 	isConnected:  sqliteConnected,
 }
@@ -120,6 +121,18 @@ func sqliteFetchRecords(tableName string) (map[string]string, error) {
 		return nil, errors.New(NO_RECORDS)
 	}
 	return records, nil
+}
+
+func sqliteFetchRecord(tableName string, key string) (string, error) {
+	var value string
+	err := SqliteDB.QueryRow("SELECT value FROM "+tableName+" WHERE key = ?", key).Scan(&value)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", errors.New(NO_RECORD)
+		}
+		return "", err
+	}
+	return value, nil
 }
 
 func sqliteCloseDB() {

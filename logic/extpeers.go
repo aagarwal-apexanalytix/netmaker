@@ -757,6 +757,9 @@ func getExtpeersExtraRoutes(node models.Node) (egressRoutes []models.EgressNetwo
 }
 
 func GetExtclientAllowedIPs(client models.ExtClient) (allowedIPs []string) {
+	if client.IngressGatewayID == "" {
+		return
+	}
 	gwnode, err := GetNodeByID(client.IngressGatewayID)
 	if err != nil {
 		logger.Log(0,

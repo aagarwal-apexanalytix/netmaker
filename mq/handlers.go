@@ -89,7 +89,7 @@ func UpdateHost(client mqtt.Client, msg mqtt.Message) {
 	}
 	currentHost, err := logic.GetHost(id)
 	if err != nil {
-		slog.Error("error getting host", "id", id, "error", err)
+		slog.Warn("check-in from deleted/unknown host, ignoring", "id", id)
 		return
 	}
 	decrypted, decryptErr := decryptMsgWithHost(currentHost, msg.Payload())

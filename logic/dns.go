@@ -174,20 +174,23 @@ func EgressDNs(network string) (entries []models.DNSEntry) {
 	}).ListByNetwork(db.WithContext(context.TODO()))
 	for _, egI := range egs {
 		if egI.Domain != "" && len(egI.DomainAns) > 0 {
-			entry := models.DNSEntry{
-				Name: egI.Domain,
-			}
+			// Create one entry per IP to avoid dropping multi-address domains.
+			// Previously, only the last A and last AAAA record survived.
 			for _, domainAns := range egI.DomainAns {
 				ip, _, err := net.ParseCIDR(domainAns)
-				if err == nil {
-					if ip.To4() != nil {
-						entry.Address = ip.String()
-					} else {
-						entry.Address6 = ip.String()
-					}
+				if err != nil {
+					continue
 				}
+				entry := models.DNSEntry{
+					Name: egI.Domain,
+				}
+				if ip.To4() != nil {
+					entry.Address = ip.String()
+				} else {
+					entry.Address6 = ip.String()
+				}
+				entries = append(entries, entry)
 			}
-			entries = append(entries, entry)
 		}
 	}
 	return
@@ -278,6 +281,10 @@ func SetDNSOnWgConfig(gwNode *models.Node, extclient *models.ExtClient) {
 	if extclient.DNS != "" {
 		return
 	}
+	if defaultDNS := servercfg.GetDefaultExtClientDNS(); defaultDNS != "" {
+		extclient.DNS = defaultDNS
+		return
+	}
 	extclient.DNS = GetGwDNS(gwNode)
 }
 
@@ -320,7 +327,7 @@ func SetCorefile(domains string) error {
 	corefile := domains + ` {
     reload 15s
     hosts /root/dnsconfig/netmaker.hosts {
-	fallthrough	
+	fallthrough
     }
     forward . 8.8.8.8 8.8.4.4
     log
@@ -377,16 +384,17 @@ func SortDNSEntrys(unsortedDNSEntrys []models.DNSEntry) {
 	})
 }
 
-// IsNetworkNameValid - checks if a netid of a network uses valid characters
+// IsDNSEntryValid - checks if a DNS entry name uses valid characters.
+// Allows underscores for SRV record names (e.g., _ldap._tcp.dc._msdcs.example.com).
 func IsDNSEntryValid(d string) bool {
-	re := regexp.MustCompile(`^[A-Za-z0-9-.]+$`)
+	re := regexp.MustCompile(`^[A-Za-z0-9-._]+$`)
 	return re.MatchString(d)
 }
 
 // ValidateDNSCreate - checks if an entry is valid
 func ValidateDNSCreate(entry models.DNSEntry) error {
 	if !IsDNSEntryValid(entry.Name) {
-		return errors.New("invalid input. Only uppercase letters (A-Z), lowercase letters (a-z), numbers (0-9), minus sign (-) and dots (.) are allowed")
+		return errors.New("invalid input. Only letters (A-Z, a-z), numbers (0-9), minus sign (-), dots (.), and underscores (_) are allowed")
 	}
 	v := validator.New()
 

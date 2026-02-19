@@ -611,6 +611,13 @@ func GetManageDNS() bool {
 	return enabled
 }
 
+// GetDefaultExtClientDNS - returns the default DNS servers for ext clients.
+// If EXT_CLIENT_DNS is set, it is used as the DNS for new ext clients
+// instead of the gateway's VPN IP.
+func GetDefaultExtClientDNS() string {
+	return os.Getenv("EXT_CLIENT_DNS")
+}
+
 func IsOldAclEnabled() bool {
 	enabled := true
 	if os.Getenv("OLD_ACL_SUPPORT") != "" {

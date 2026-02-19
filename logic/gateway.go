@@ -485,3 +485,12 @@ func GetAllowedIpForInetNodeClient(node, peer *models.Node) []net.IPNet {
 
 	return allowedips
 }
+
+// GetIngressDNSAddress returns the DNS address for an ingress gateway.
+// Falls back to EXT_CLIENT_DNS env var when IngressDNS is not set.
+func GetIngressDNSAddress(node *models.Node) string {
+	if node.IngressDNS != "" {
+		return node.IngressDNS
+	}
+	return servercfg.GetDefaultExtClientDNS()
+}

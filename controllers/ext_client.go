@@ -430,6 +430,11 @@ func getExtClientHAConf(w http.ResponseWriter, r *http.Request) {
 
 		}
 	}
+	if targetGwID == "" {
+		logic.ReturnErrorResponse(w, r, logic.FormatError(
+			errors.New("no available ingress gateway found on network"), "badrequest"))
+		return
+	}
 	gwnode, err := logic.GetNodeByID(targetGwID)
 	if err != nil {
 		logger.Log(

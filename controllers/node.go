@@ -83,7 +83,7 @@ func authenticate(response http.ResponseWriter, request *http.Request) {
 	}
 	host, err := logic.GetHost(result.HostID.String())
 	if err != nil {
-		errorResponse.Code = http.StatusBadRequest
+		errorResponse.Code = http.StatusGone
 		errorResponse.Message = err.Error()
 		logger.Log(0, request.Header.Get("user"),
 			"error retrieving host: ", result.HostID.String(), err.Error())
